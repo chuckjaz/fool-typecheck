@@ -1,9 +1,11 @@
 module Common.Lexer where
 
+import qualified Data.Set as Set
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 
 data Token
     =   TIdentifier String
+    |   TReserved String
     |   TOperator String
     |   TNumber Integer
     |   TError String
@@ -39,5 +41,13 @@ tokens text =
         oneOf (_:cs) ch = oneOf cs ch
         oneOf [] _ = False
 
-        isSingleOp = oneOf "():[]{}"
+        isSingleOp = oneOf "():[]{},;"
         isOperator = oneOf "+-*/&^|\\<>=."
+
+reserve :: [String] -> [Token] -> [Token]
+reserve names tokens =
+    let r = Set.fromList names in
+        map (reserved' r) tokens
+    where
+        reserved' r (TIdentifier id) | Set.member id r = TReserved id
+        reserved' _ t = t 

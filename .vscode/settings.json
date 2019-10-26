@@ -4,6 +4,7 @@
         "chainl",
         "concat",
         "fmap",
+        "listl",
         "mplus",
         "mzero",
         "parens"

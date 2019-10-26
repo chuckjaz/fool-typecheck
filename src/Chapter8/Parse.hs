@@ -76,5 +76,7 @@ apply = do
 expression :: Parser Expression
 expression = apply
 
+lexer s = reserve ["True", "False"] $ tokens s
+
 expr :: String -> Expression
-expr text = runParser expression (tokens text)
+expr text = runParser expression $ lexer text

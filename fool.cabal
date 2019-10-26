@@ -32,6 +32,9 @@ library
       Chapter8.Parse
       Chapter8.Syntax
       Chapter8.TypeCheck
+      Chapter8rr.Syntax
+      Chapter8rr.Parse
+      Chapter8rr.TypeCheck
   other-modules:
       Paths_fool
   hs-source-dirs:
@@ -39,6 +42,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , mtl
   default-language: Haskell2010
 
 executable fool-exe
@@ -55,7 +59,7 @@ executable fool-exe
 
 test-suite fool-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Specs.hs
   other-modules:
       Paths_fool
   hs-source-dirs:

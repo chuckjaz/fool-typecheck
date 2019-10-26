@@ -11,7 +11,7 @@ runParser :: Parser a -> [Token] -> a
 runParser m s =
     case parse m s of
         [(res, [])] -> res
-        [(_, _)]    -> error "Parser did not consume entire stream."
+        [(_, t)]    -> error ("Parser did not consume entire stream. " ++ show t)
         _           -> error "Parser error."
 
 item :: Parser Token
@@ -65,7 +65,7 @@ satisfy p = item `bind` \c ->
     else failure
 
 reserved :: String -> Parser Token
-reserved s = satisfy (\t -> (TIdentifier s) == t)
+reserved s = satisfy (\t -> (TReserved s) == t)
 
 reservedOp :: String -> Parser Token
 reservedOp s = satisfy (\t -> (TOperator s) == t)
@@ -109,3 +109,13 @@ parens m = do
     reservedOp ")"
     return r
 
+sepBy :: Parser a -> String -> Parser [a]
+sepBy p sep = do
+    a <- p
+    as <- many one
+    return (a:as)
+    where
+        one = do
+            reservedOp sep
+            a <- p
+            return a

@@ -1,3 +1,5 @@
+module Chapter8.Spec where
+
 import Test.Hspec
 import Test.QuickCheck
 
@@ -13,8 +15,8 @@ fne = TypeError "ERROR: Expected a function type"
 pe a b = TypeError ("ERROR: Expected parameter of type " ++ 
     show a ++ ", received type " ++ show b)
 
-main :: IO ()
-main = hspec $ do
+spec :: IO ()
+spec = hspec $ do
     describe "Chapter8" $ do
         describe "type check" $ do
             describe "positive" $ do
