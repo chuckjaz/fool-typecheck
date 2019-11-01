@@ -16,9 +16,9 @@ tokens text =
     case text of
         (c:cs) | isSpace c      -> tokens cs
         (c:_)  | isDigit c      -> tokenOf isDigit stringToNumber text
-        (c:_)  | isAlpha c      -> tokenOf isAlphaNum TIdentifier text
         (c:cs) | isSingleOp c   -> [TOperator [c]] ++ tokens cs
         (c:_)  | isOperator c   -> tokenOf isOperator TOperator text
+        (c:_)  | isAlpha c      -> tokenOf isAlphaNum TIdentifier text
         []                      -> [] 
         (c:cs)                  -> [TError "Invalid character"] ++ tokens cs
     where
@@ -41,8 +41,8 @@ tokens text =
         oneOf (_:cs) ch = oneOf cs ch
         oneOf [] _ = False
 
-        isSingleOp = oneOf "():[]{},;"
-        isOperator = oneOf "+-*/&^|\\<>=."
+        isSingleOp = oneOf "()[]{},;*.λ∀Λ∃"
+        isOperator = oneOf "+-/&^|\\<>=:"
 
 reserve :: [String] -> [Token] -> [Token]
 reserve names tokens =

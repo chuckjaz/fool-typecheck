@@ -32,10 +32,10 @@ literal = trueLiteral <|> falseLiteral <|> numberLiteral
             value <- number
             return $ ELiteral (LInteger value)
         trueLiteral = do
-            reserved "True"
+            expect "True"
             return $ ELiteral (LBoolean True)
         falseLiteral = do
-            reserved "False"
+            expect "False"
             return $ ELiteral (LBoolean False)
             
 variable :: Parser Expression
@@ -45,13 +45,13 @@ variable = do
 
 lambda :: Parser Expression
 lambda = do 
-    reservedOp "\\"
-    reservedOp "("
+    expect "\\"
+    expect "("
     parameter <- identifier
-    reservedOp ":"
+    expect ":"
     parameterType <- typeExpr
-    reservedOp ")"
-    reservedOp "."
+    expect ")"
+    expect "."
     body <- expression
     return $ ELambda parameter parameterType body
 

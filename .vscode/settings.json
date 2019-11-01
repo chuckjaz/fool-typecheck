@@ -1,12 +1,17 @@
 {
     "cSpell.words": [
+        "Fcns",
         "Hspec",
         "chainl",
         "concat",
+        "eval",
         "fmap",
+        "foldr",
+        "getput",
         "listl",
         "mplus",
         "mzero",
-        "parens"
+        "parens",
+        "subtyping"
     ]
 }

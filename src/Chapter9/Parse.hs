@@ -1,4 +1,4 @@
-module Chapter8rr.Parse where
+module Chapter9.Parse where
 
 import Control.Applicative
 import Control.Monad
@@ -6,16 +6,29 @@ import Control.Monad
 import Common.Parser
 import Common.Lexer
 
-import Chapter8rr.Syntax
-
-import Debug.Trace
+import Chapter9.Syntax
 
 -- Types
+intType :: Parser Type
+intType = do
+    expect "int"
+    return $ TType"int" KStar
+
+boolType :: Parser Type
+boolType = do
+    expect "bool"
+    return $ TType "bool" KStar
+
+stringType :: Parser Type
+stringType = do
+    expect "string"
+    return $ TType "string" KStar
 
 namedType :: Parser Type
 namedType = do
     name <- identifier
-    return $ TType name
+    kind <- kindClause
+    return $ TVariable name kind
 
 voidType :: Parser Type
 voidType = do
@@ -44,16 +57,86 @@ recordType = do
             name <- identifier
             expect ":"
             typ <- typeExpression
-            return $ (name, typ)
+            return (name, typ)
+
+kindClause :: Parser Kind
+kindClause = kindClause' <|> return KStar
+    where
+        kindClause' = do
+            expect ":"
+            kindExpression
+        kindExpression = kindPrimitive `chainl1` (infixOp "=>" KFunction)
+        kindPrimitive = do
+                star
+            <|> parens kindExpression
+        star = do
+            expect "*"
+            return KStar
+
+typeLambda :: Parser Type
+typeLambda = do
+    expect "λ"
+    name <- identifier
+    kind <- kindClause
+    expect "."
+    body <- typeExpression
+    return $ TLambda name kind body
+
+typeParameter :: Parser (String, Kind, Type)
+typeParameter = unconstrained <|> constrained
+    where
+        unconstrained = do
+            name <- identifier
+            kind <- kindClause
+            return (name, kind, TNone)
+        constrained = do
+            expect "("
+            name <- identifier
+            kind <- kindClause
+            expect "<:"
+            constraint <- typeExpression
+            expect ")"
+            return (name, kind, constraint)
+
+typeAll :: Parser Type
+typeAll = do
+    expect "∀"
+    (name, kind, constraint) <- typeParameter
+    expect "."
+    body <- typeExpression
+    return $ TAll name kind constraint body
+
+typeExists :: Parser Type
+typeExists = do
+    expect "∃"
+    (name, kind, constraint) <- typeParameter
+    expect "."
+    body <- typeExpression
+    return $ TExists name kind constraint body
+
+typeFix :: Parser Type
+typeFix = do
+    expect "fix"
+    expect "("
+    body <- typeExpression
+    expect ")"
+    return $ TFix body
 
 typePrimitive :: Parser Type
 typePrimitive = do
         voidType
+    <|> intType
+    <|> boolType
+    <|> stringType
     <|> commandType
     <|> namedType
     <|> refType
     <|> recordType
     <|> parens typeExpression
+    <|> typeLambda
+    <|> typeAll
+    <|> typeExists
+    <|> typeFix
 
 typeFunction :: Parser Type
 typeFunction = typePrimitive `chainl1` (infixOp "->" TFunction)
@@ -80,8 +163,18 @@ typeSum = do
     t <- oneOf types TSum
     return t
 
+typeApply :: Parser Type
+typeApply = do
+    a <- typeSum
+    rest a
+        where
+            one a = do
+                b <- typeSum
+                rest $ TApply a b
+            rest a = one a <|> return a
+
 typeExpression :: Parser Type
-typeExpression = typeSum
+typeExpression = typeApply
 
 -- Expressions
 
@@ -151,19 +244,21 @@ caseExpr = do
     clauses <- many caseClause
     return $ ECase value clauses
 
-caseClause :: Parser (String, Type, Expression)
+caseClause :: Parser ECaseClause
 caseClause = do
     name <- identifier
     expect ":"
     typ <- typeExpression
     expect "then"
     body <- primitive
-    return $ (name, typ, body)
+    return (name, typ, body)
 
 inExpr :: Parser Expression
 inExpr = do
     expect "in"
+    expect "<"
     typ <- typeExpression
+    expect ">"
     expect "("
     value <- expression
     expect ")"
@@ -182,7 +277,7 @@ record = do
             typ <- typeExpression
             expect ":="
             value <- expression
-            return $ (name, typ, value)
+            return (name, typ, value)
 
 ref :: Parser Expression
 ref = do
@@ -206,9 +301,13 @@ ifExpr = do
     expect "if"
     value <- expression
     expect "then"
+    expect "{"
     thenVal <- expression
+    expect "}"
     expect "else"
+    expect "{"
     elseVal <- expression
+    expect "}"
     return $ EIf value thenVal elseVal
 
 nop :: Parser Expression
@@ -216,13 +315,47 @@ nop = do
     expect "nop"
     return ENop
 
+polyLambda :: Parser Expression
+polyLambda = do
+    expect "Λ"
+    (name, kind, constraint) <- typeParameter
+    expect "."
+    body <- expression
+    return $ EPolyLambda name kind constraint body
+
+pack :: Parser Expression
+pack = do
+    expect "pack"
+    expect "<"
+    bodyType <- typeExpression
+    expect ","
+    body <- expression
+    expect ">"
+    expect "as"
+    packType <- typeExpression
+    return $ EPack bodyType body packType
+
+open :: Parser Expression
+open = do
+    expect "open"
+    expr <- primitive
+    expect "as"
+    expect "<"
+    name <- identifier
+    kind <- kindClause
+    expect ","
+    var <- identifier
+    expect ">"
+    expect "in"
+    body <- expression
+    return $ EOpen expr name kind var body
+
 primitive :: Parser Expression
 primitive =
         literal
     <|> voidExpr
     <|> tuple
     <|> lambda
-    <|> tuple
     <|> projection
     <|> caseExpr
     <|> inExpr
@@ -233,6 +366,9 @@ primitive =
     <|> ifExpr
     <|> nop
     <|> variable
+    <|> polyLambda
+    <|> pack
+    <|> open
     <|> parens expression
 
 select :: Parser Expression
@@ -246,13 +382,25 @@ select = do
             name <- identifier
             return $ ESelect value name
 
-apply :: Parser Expression
-apply = do
+applyType :: Parser Expression
+applyType = do
     a <- select
     rest a
         where
             one a = do
-                b <- select
+                expect "["
+                b <- typeExpression
+                expect "]"
+                rest $ EPolyApply a b
+            rest a = one a <|> return a
+
+apply :: Parser Expression
+apply = do
+    a <- applyType
+    rest a
+        where
+            one a = do
+                b <- applyType
                 rest $ EApply a b
             rest a = one a <|> return a
 
@@ -262,8 +410,7 @@ assign = do
     assign' target <|> return target
     where
         assign' target = do
-            expect ":"
-            expect "="
+            expect ":="
             value <- apply
             return $ EAssign target value
 
@@ -281,9 +428,12 @@ expression :: Parser Expression
 expression = sequenceExpr
 
 lexer :: String -> [Token]
-lexer s = reserve ["true", "false", "in", "λ", "null", "ref", "if",
+lexer s = reserve ["true", "false", "in", "null", "ref", "if",
     "then", "else", "val", "nop", "case", "of", "void", "command",
-    "proj"] $ tokens s
+    "proj", "pack", "as", "open", "bool", "int", "string", "fix"] $ tokens s
 
 expr :: String -> Expression
 expr s = runParser expression $ lexer s
+
+typeExpr :: String -> Type
+typeExpr s = runParser typeExpression $ lexer s

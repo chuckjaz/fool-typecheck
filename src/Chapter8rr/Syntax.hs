@@ -13,7 +13,7 @@ data Type
     | TOpen
     | TError String
     deriving (Show, Eq)
-
+    
 data Literal
     = LNumber Integer
     | LBoolean Bool

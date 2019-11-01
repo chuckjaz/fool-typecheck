@@ -34,7 +34,8 @@ packages:
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #
-# extra-deps:
+extra-deps:
+- haskell-dap-0.0.13.0@sha256:1bf5faf30b4b5e1e12576a3c52368b16bdaec2d57538c5b8544cede12b4216f9,3301
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

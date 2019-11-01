@@ -70,6 +70,9 @@ reserved s = satisfy (\t -> (TReserved s) == t)
 reservedOp :: String -> Parser Token
 reservedOp s = satisfy (\t -> (TOperator s) == t)
 
+expect :: String -> Parser Token
+expect s = reserved s <|> reservedOp s
+
 identifier :: Parser String
 identifier = do
     tok <- item
