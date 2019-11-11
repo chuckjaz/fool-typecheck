@@ -141,16 +141,6 @@ typePrimitive = do
 typeFunction :: Parser Type
 typeFunction = typePrimitive `chainl1` (infixOp "->" TFunction)
 
-one p = do
-    o <- p
-    return [o]
-
-oneOf ts f = do
-    case ts of
-        [] -> return TVoid
-        [t] -> return t
-        _ -> return $ f ts
-
 typeTuple :: Parser Type
 typeTuple = do
     types <- (one typeFunction) `chainl1` (infixOp "*" (++))
@@ -162,6 +152,12 @@ typeSum = do
     types <- (one typeTuple) `chainl1` (infixOp "+" (++))
     t <- oneOf types TSum
     return t
+
+oneOf ts f = do
+    case ts of
+        [] -> return TVoid
+        [t] -> return t
+        _ -> return $ f ts
 
 typeApply :: Parser Type
 typeApply = do

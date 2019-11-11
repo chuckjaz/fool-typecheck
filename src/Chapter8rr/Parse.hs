@@ -58,10 +58,6 @@ typePrimitive = do
 typeFunction :: Parser Type
 typeFunction = typePrimitive `chainl1` (infixOp "->" TFunction)
 
-one p = do
-    o <- p
-    return [o]
-
 oneOf ts f = do
     case ts of
         [] -> return TVoid

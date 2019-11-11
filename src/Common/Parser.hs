@@ -31,7 +31,7 @@ instance Functor Parser where
 
 instance Applicative Parser where
     pure = return
-    (Parser cs1) <*> (Parser cs2) = 
+    (Parser cs1) <*> (Parser cs2) =
         Parser (\s -> [(f a, s2) | (f, s1) <- cs1 s, (a, s2) <- cs2 s1])
 
 instance Monad Parser where
@@ -83,7 +83,7 @@ identifier = do
 number :: Parser Integer
 number = do
     tok <- item
-    case tok of 
+    case tok of
         TNumber n -> return n
         _ -> failure
 
@@ -95,10 +95,10 @@ p `chainl1` op = do
         a <- p
         rest a
             where
-                one a = do 
+                one a = do
                     f <- op
                     b <- p
-                    rest (f a b) 
+                    rest (f a b)
                 rest a = one a <|> return a
 
 
@@ -115,10 +115,14 @@ parens m = do
 sepBy :: Parser a -> String -> Parser [a]
 sepBy p sep = do
     a <- p
-    as <- many one
+    as <- many one'
     return (a:as)
     where
-        one = do
+        one' = do
             reservedOp sep
             a <- p
             return a
+
+one p = do
+    o <- p
+    return [o]

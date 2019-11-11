@@ -41,8 +41,8 @@ tokens text =
         oneOf (_:cs) ch = oneOf cs ch
         oneOf [] _ = False
 
-        isSingleOp = oneOf "()[]{},;*.λ∀Λ∃"
-        isOperator = oneOf "+-/&^|\\<>=:"
+        isSingleOp = oneOf "()[],;*.λ∀Λ∃"
+        isOperator = oneOf "+-/&^|\\<>=:{}"
 
 reserve :: [String] -> [Token] -> [Token]
 reserve names tokens =
