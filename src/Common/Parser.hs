@@ -5,6 +5,8 @@ import Control.Monad
 
 import Common.Lexer
 
+import Debug.Trace
+
 newtype Parser a = Parser { parse :: [Token] -> [(a,[Token])] }
 
 runParser :: Parser a -> [Token] -> a
@@ -12,13 +14,19 @@ runParser m s =
     case parse m s of
         [(res, [])] -> res
         [(_, t)]    -> error ("Parser did not consume entire stream. " ++ show t)
-        _           -> error "Parser error."
+        _           -> error $ "Parser error."
 
 item :: Parser Token
 item = Parser $ \s ->
     case s of
         []     -> []
         (t:ts) -> [(t,ts)]
+
+traceP :: String -> Parser ()
+traceP m = Parser $ \s ->
+    case s of
+        [] -> (trace (m ++ ": <eof>")) [((), [])]
+        ts -> (trace (m ++ ": " ++ show ts)) [((), ts)]
 
 bind :: Parser a -> (a -> Parser b) -> Parser b
 bind p f = Parser $ \s -> concatMap (\(a, s') -> parse (f a) s') $ parse p s

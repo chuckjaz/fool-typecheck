@@ -15,10 +15,10 @@ data Type
 
 type TField = (String, Type)
 
-data Prog = Program String Block
+data Program = Program String Block
     deriving (Eq, Ord, Show)
 
-data Block = Blk TDefs CDefs Stmt Exp
+data Block = Block TDefs CDefs Stmt Exp
     deriving (Eq, Ord, Show)
 
 type TDefs = Map.Map String Type
@@ -42,7 +42,7 @@ data Exp
     | ERef Exp
     | ECall Exp [Exp]
     | EFunction [EParam] Type Block
-    | EClass (Maybe Exp) [String] Exp Exp
+    | EClass (Maybe (Exp, [String])) Exp Exp
     | ENew Exp
     | ESend Exp String
     | ESelect Exp String

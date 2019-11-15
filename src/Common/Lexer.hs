@@ -14,13 +14,14 @@ data Token
 tokens :: String -> [Token]
 tokens text = 
     case text of
-        (c:cs) | isSpace c      -> tokens cs
-        (c:_)  | isDigit c      -> tokenOf isDigit stringToNumber text
-        (c:cs) | isSingleOp c   -> [TOperator [c]] ++ tokens cs
-        (c:_)  | isOperator c   -> tokenOf isOperator TOperator text
-        (c:_)  | isAlpha c      -> tokenOf isAlphaNum TIdentifier text
-        []                      -> [] 
-        (c:cs)                  -> [TError "Invalid character"] ++ tokens cs
+        (c:cs)     | isSpace c           -> tokens cs
+        (c:_)      | isDigit c           -> tokenOf isDigit stringToNumber text
+        (c1:c2:cs) | isDiphthong [c1,c2] -> [TOperator [c1,c2]] ++ tokens cs
+        (c:cs)     | isSingleOp c        -> [TOperator [c]] ++ tokens cs
+        (c:_)      | isOperator c        -> tokenOf isOperator TOperator text
+        (c:_)      | isAlpha c           -> tokenOf isAlphaNum TIdentifier text
+        []                               -> [] 
+        (c:cs)                           -> [TError "Invalid character"] ++ tokens cs
     where
         takeWhile :: (Char -> Bool) -> String -> (String, String)
         takeWhile p text = takeWhile' p text []
@@ -41,8 +42,14 @@ tokens text =
         oneOf (_:cs) ch = oneOf cs ch
         oneOf [] _ = False
 
+        oneOfS :: [String] -> String -> Bool
+        oneOfS (t:_) l | t == l = True
+        oneOfS (_:ts) l = oneOfS ts l
+        oneOfS [] _ = False
+
         isSingleOp = oneOf "()[],;*.λ∀Λ∃"
         isOperator = oneOf "+-/&^|\\<>=:{}"
+        isDiphthong = oneOfS ["()"]
 
 reserve :: [String] -> [Token] -> [Token]
 reserve names tokens =
